@@ -43,3 +43,11 @@ text_file.write(variable_txt)
 
 # close file
 text_file.closed()
+
+
+
+# Print Stuff
+for item in to_write:
+    print(item)
+    print()
+    
