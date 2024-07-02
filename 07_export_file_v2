@@ -43,3 +43,8 @@ for item in to_write:
 
 # close file
 text_file.close()
+
+# Print stuff
+for item in to_write:
+    print(item)
+    print()
