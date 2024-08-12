@@ -1,0 +1,209 @@
+# import libraries
+import pandas
+
+
+# *** Functions go here ***
+
+
+# checks that input is either a float or an
+# integer that is more than zero. Takes in custom error message
+def num_check(question, error, num_type):
+    while True:
+
+        try:
+            response = num_type(input(question))
+
+            if response > 0:
+                return response
+            else:
+                print(error)
+
+        except ValueError:
+            print(error)
+
+
+# Checks that user has entered yes / no to a question
+
+def yes_no(question):
+    while True:
+        response = input(question).lower()
+
+        if response == "y" or response == "yes":
+            return "yes"
+        elif response == "n" or response == "no":
+            return "no"
+        else:
+            print("Please enter yes / no")
+
+
+# Checks that string response is not blank
+def not_blank(question, error):
+    while True:
+        response = input(question)
+
+        if response == "":
+            print("Sorry this cant be blank. Please try again")
+        else:
+            return response
+
+
+# currency formatting function
+def currency(x):
+    return f"${x:.2f}"
+
+
+
+def get_expenses(var_fixed):
+    # Set up dictionaries and lists
+
+    item_list = []
+    quantity_list = []
+    price_list = []
+
+    expense_dict = {
+        "Item": item_list,
+        "Quantity": quantity_list,
+        "Price": price_list
+    }
+
+    # loop to get component, quantity and price
+    item_name = ""
+    while item_name.lower() != "xxx":
+
+        print()
+
+        # get name, quantity and item
+        item_name = not_blank("Item name: ", "The component name is: ")
+        if item_name.lower() == "xxx":
+            break
+
+        # for variable costs, find the number of items.
+        # Otherwise set the quantity to 1
+        if var_fixed == "variable":
+            quantity = num_check("Quantity:",
+                                 "The amount must be a whole number",
+                                 int)
+
+        else:
+            quantity = 1
+
+        price = num_check("How much for a single item? $",
+                          "The price must be a number more than 0",
+                          float)
+
+        # add item, quantity and price to lists
+        item_list.append(item_name)
+        quantity_list.append(quantity)
+        price_list.append(price)
+
+    expense_frame = pandas.DataFrame(expense_dict)
+    expense_frame = expense_frame.set_index('Item')
+
+    # Calculate cost of each component
+    expense_frame['Cost'] = expense_frame['Quantity'] * expense_frame
+
+    # Find sub total
+    sub_total = expense_frame['Cost'].sum()
+
+    # Currency Formatting (uses currency function)
+    add_dollars = ['Price', 'Cost']
+    for item in add_dollars:
+        expense_frame[item] = expense_frame[item].apply(currency(item))
+
+    return [expense_frame, sub_total]
+
+
+# *** Main routine starts here ***
+
+# Get product name
+product_name = not_blank("Product name: ", "The product name cant be blank")
+
+variable_expenses = get_expenses("variable")
+variable_frame = variable_expenses[0]
+variable_sub = variable_expenses[1]
+
+have_fixed = yes_no("Do you have fixed expenses? ")
+
+if have_fixed == "yes":
+
+    fixed_expenses = get_expenses("fixed")
+    fixed_frame = fixed_expenses[0]
+    fixed_sub = fixed_expenses[1]
+
+else:
+    #  if there are no fixed expenses, set the sub total
+    #  to zero and set the frame to blank
+    fixed_frame = ""
+    fixed_sub = 0
+
+# *** Printing Area ***
+
+print()
+print(variable_frame)
+print()
+
+print(fixed_frame)
+
+total_expenses = variable_sub + fixed_sub
+
+print(f"Total expenses: ${total_expenses}:.2f")
+
+
+def profit_goal(total_costs):
+
+    # Initialise variables and error message
+    error = "Please enter a valid profit goal\n"
+
+    valid = False
+    while not valid:
+
+        # ask for profit goal:
+        response = input("What is your goal (eg $500 or 50%) ")
+
+        # check if first character is $
+        if response[0] == "$":
+            profit_type = "$"
+            # Get amount (everything after the $)
+            amount = response[1:]
+
+        # check if last character is %
+        elif response [-1] == "%":
+            profit_type = "%"
+            # Get amount (everything before the %)
+            amount = response[:-1]
+
+        else:
+            # set response to amount for now
+            profit_type = "unknown"
+            amount = response
+
+        try:
+            # Check amount is a number more than zero
+            amount = float(amount)
+            if amount <= 0:
+                print(error)
+                continue
+
+        except ValueError:
+            print(error)
+            continue
+
+
+        if profit_type == "unknown" and amount >= 100:
+            dollar_type = yes_no("Do you mean ${:.2f}. "
+                                 "ie {:.2f} dollars? ,"
+                                 " y / n".format(amount, amount))
+
+            # Set profit type based on user answer above
+            if dollar_type == "yes":
+                profit_type = "%"
+            else:
+                profit_type = "$"
+
+        # return profit goal to main routine
+        if profit_type == "$":
+            return amount
+        else:
+            goal = (amount / 100) * total_costs
+            return goal
+
